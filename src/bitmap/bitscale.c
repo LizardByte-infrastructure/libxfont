@@ -507,7 +507,8 @@ static int
 computeProps(FontPropPtr pf, char *wasStringProp,
 	     FontPropPtr npf, char *isStringProp,
 	     unsigned int nprops, double xfactor, double yfactor,
-	     double sXfactor, double sYfactor)
+	     double sXfactor, double sYfactor,
+	     int maxprops)
 {
     int         n;
     int         count;
@@ -522,25 +523,13 @@ computeProps(FontPropPtr pf, char *wasStringProp,
 
 	switch (t->type) {
 	case scaledX:
-	    npf->value = doround(xfactor * (double)pf->value);
-	    rawfactor = sXfactor;
-	    break;
 	case scaledY:
-	    npf->value = doround(yfactor * (double)pf->value);
-	    rawfactor = sYfactor;
-	    break;
-	case unscaled:
-	    npf->value = pf->value;
-	    npf->name = pf->name;
-	    npf++;
-	    count++;
-	    *isStringProp++ = *wasStringProp;
-	    break;
-	default:
-	    break;
-	}
-	if (t->type != unscaled)
-	{
+	    if (count + 2 > maxprops)
+		continue;
+	    npf->value = (t->type == scaledX)
+		? doround(xfactor * (double)pf->value)
+		: doround(yfactor * (double)pf->value);
+	    rawfactor = (t->type == scaledX) ? sXfactor : sYfactor;
 	    npf->name = pf->name;
 	    npf++;
 	    count++;
@@ -550,6 +539,18 @@ computeProps(FontPropPtr pf, char *wasStringProp,
 	    count++;
 	    *isStringProp++ = *wasStringProp;
 	    *isStringProp++ = *wasStringProp;
+	    break;
+	case unscaled:
+	    if (count + 1 > maxprops)
+		continue;
+	    npf->value = pf->value;
+	    npf->name = pf->name;
+	    npf++;
+	    count++;
+	    *isStringProp++ = *wasStringProp;
+	    break;
+	default:
+	    break;
 	}
     }
     return count;
@@ -667,7 +668,7 @@ ComputeScaledProperties(FontInfoPtr sourceFontInfo, /* the font to be scaled */
     n = NPROPS;
     n += computeProps(sourceFontInfo->props, sourceFontInfo->isStringProp,
 		      fp, isStringProp, sourceFontInfo->nprops, dx, dy,
-		      sdx, sdy);
+		      sdx, sdy, nProps - NPROPS);
     return n;
 }
 
