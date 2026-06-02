@@ -48,6 +48,10 @@ XORG_WITH_XMLTO(0.0.22)
 XORG_WITH_FOP
 XORG_CHECK_SGML_DOCTOOLS(1.7)
 
+# Check for Python 3 (needed to generate test font data)
+AM_PATH_PYTHON([3.0],, [:])
+AM_CONDITIONAL([HAVE_PYTHON], [test "$PYTHON" != :])
+
 # Checks for header files.
 AC_CHECK_HEADERS([endian.h poll.h sys/poll.h])
 
