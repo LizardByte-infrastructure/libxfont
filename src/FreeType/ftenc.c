@@ -181,7 +181,6 @@ find_cmap(int type, int pid, int eid, FT_Face face, FT_CharMap *cmap_return)
                 return 1;
             }
         }
-        break;
         /* Try Apple Unicode */
         for(i=0; i<n; i++) {
             cmap = face->charmaps[i];
