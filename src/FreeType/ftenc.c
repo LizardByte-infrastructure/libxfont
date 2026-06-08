@@ -90,8 +90,7 @@ FTPickMapping(char *xlfd, int length, char *filename, FT_Face face,
            currently only work for BDFs. */
         if(strlen(enc) + strlen(reg) > 18)
             goto native;
-        snprintf(buf, sizeof(buf), "%s-%s", enc, reg);
-        ErrorF("%s %s\n", buf, encoding_name);
+        snprintf(buf, sizeof(buf), "%s-%s", reg, enc);
         if(strcasecmp(buf, "iso10646-1") != 0) {
             if(strcasecmp(buf, encoding_name) == 0)
                 goto native;
