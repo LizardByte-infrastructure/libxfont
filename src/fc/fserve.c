@@ -1081,6 +1081,7 @@ fs_read_extent_info(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
 	return AllocError;
     }
     fsfont->encoding = pCI;
+    fsfont->num_encoding = numExtents;
     if (haveInk)
 	fsfont->inkMetrics = pCI + numExtents;
     else
@@ -1980,6 +1981,17 @@ fs_read_glyphs(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
     {
 	minchar = 0;
 	maxchar = rep->num_chars;
+
+	/* Reject replies where num_chars exceeds the encoding array
+	   size allocated in fs_read_extent_info() to prevent
+	   out-of-bounds access on encoding[]. */
+	if (rep->num_chars > (CARD32)fsdata->num_encoding)
+	{
+	    ErrorF("fserve: num_chars (%u) > num_encoding (%d)\n",
+		   (unsigned) rep->num_chars, fsdata->num_encoding);
+	    err = AllocError;
+	    goto bail;
+	}
     }
 
     off_adr = (char *)ppbits;
@@ -2001,6 +2013,16 @@ fs_read_glyphs(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
     for (i = 0; i < rep->num_chars; i++)
     {
 	memcpy(&local_off, off_adr, SIZEOF(fsOffset32));	/* align it */
+	/* Bounds-check minchar against the encoding array size to
+	   prevent out-of-bounds access from a malicious font server
+	   reply with more num_chars than num_extents. */
+	if (minchar >= (unsigned long)fsdata->num_encoding)
+	{
+	    ErrorF("fserve: glyph index %lu >= num_encoding (%d)\n",
+		   minchar, fsdata->num_encoding);
+	    err = AllocError;
+	    goto bail;
+	}
 	if (blockrec->type == FS_OPEN_FONT ||
 	    fsdata->encoding[minchar].bits == &_fs_glyph_requested)
 	{
