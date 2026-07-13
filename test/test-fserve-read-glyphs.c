@@ -285,7 +285,50 @@ test_num_chars_exceeds_encoding(void)
 }
 
 /*
- * Test 2: legitimate reply should still be accepted
+ * Test 2: cumulative glyph data overflow
+ *
+ * Allocate allbits with nbytes=64, but send 100 glyphs each
+ * with offset {position:0, length:64}.  Each individual source
+ * range is valid, but the cumulative writes total 6400 bytes
+ * into a 64-byte buffer.
+ */
+static int
+test_cumulative_allbits_overflow(void)
+{
+    FSFpeRec conn;
+    struct test_font_state state;
+    char *reply_buf;
+    long reply_size;
+    int result;
+    int num_encoding = 100;  /* match num_chars so encoding[] is fine */
+    CARD32 num_chars = 100;
+    CARD32 nbytes = 64;      /* tiny destination buffer */
+
+    /* All offsets point to {position:0, length:64} -- each source
+     * range is valid but they overlap, causing 100*64=6400 bytes
+     * to be written to a 64-byte buffer */
+    reply_size = build_reply(&reply_buf, num_chars, nbytes, 0, 64);
+    setup_conn(&conn, reply_buf, reply_size);
+    setup_font_state(&state, &conn, num_encoding);
+
+    result = fs_read_glyphs(&state.fpe, &state.blockrec);
+
+    cleanup_font_state(&state);
+    cleanup_conn(&conn);
+    free(reply_buf);
+
+    if (result != Successful) {
+        printf("ok 2 - cumulative allbits overflow (100 * 64 into 64) rejected\n");
+        return 0;
+    } else {
+        printf("not ok 2 - cumulative allbits overflow (100 * 64 into 64) "
+               "should have been rejected\n");
+        return 1;
+    }
+}
+
+/*
+ * Test 3: legitimate reply should still be accepted
  *
  * num_chars == num_encoding, each glyph has unique non-overlapping
  * offsets, and total data fits in nbytes.
@@ -345,10 +388,10 @@ test_legitimate_reply(void)
     free(reply_buf);
 
     if (result == Successful) {
-        printf("ok 2 - legitimate reply (4 glyphs, non-overlapping) accepted\n");
+        printf("ok 3 - legitimate reply (4 glyphs, non-overlapping) accepted\n");
         return 0;
     } else {
-        printf("not ok 2 - legitimate reply (4 glyphs, non-overlapping) "
+        printf("not ok 3 - legitimate reply (4 glyphs, non-overlapping) "
                "rejected with error %d\n", result);
         return 1;
     }
@@ -359,9 +402,10 @@ main(int argc, char **argv)
 {
     int failures = 0;
 
-    printf("1..2\n");
+    printf("1..3\n");
 
     failures += test_num_chars_exceeds_encoding();
+    failures += test_cumulative_allbits_overflow();
     failures += test_legitimate_reply();
 
     return failures ? 1 : 0;

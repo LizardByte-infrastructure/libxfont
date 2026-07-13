@@ -1900,10 +1900,7 @@ fs_read_glyphs(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
     fsOffset32		    local_off;
     char		    *off_adr;
     pointer		    pbitmaps;
-    char		    *bits, *allbits;
-#ifdef DEBUG
-    char		    *origallbits;
-#endif
+    char		    *bits, *allbits, *origallbits;
     int			    i,
 			    err;
     int			    nranges = 0;
@@ -2004,8 +2001,8 @@ fs_read_glyphs(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
 	goto bail;
     }
 
-#ifdef DEBUG
     origallbits = allbits;
+#ifdef DEBUG
     fprintf (stderr, "Reading %d glyphs in %d bytes for %s\n",
 	     (int) rep->num_chars, (int) rep->nbytes, fsd->name);
 #endif
@@ -2036,6 +2033,18 @@ fs_read_glyphs(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
 		    (local_off.position < rep->nbytes) &&
 		    (local_off.length <= (rep->nbytes - local_off.position)))
 		{
+		    /* Check that the destination buffer has enough room
+		       for this glyph to prevent a heap overflow from
+		       overlapping source offsets. */
+		    if (local_off.length >
+			rep->nbytes - (allbits - origallbits))
+		    {
+			ErrorF("fserve: glyph data overflow: "
+			       "cumulative write exceeds nbytes (%u)\n",
+			       (unsigned) rep->nbytes);
+			err = AllocError;
+			goto bail;
+		    }
 		    bits = allbits;
 		    allbits += local_off.length;
 		    memcpy(bits, (char *)pbitmaps + local_off.position,
@@ -2063,10 +2072,6 @@ fs_read_glyphs(FontPathElementPtr fpe, FSBlockDataPtr blockrec)
 	}
 	off_adr += SIZEOF(fsOffset32);
     }
-#ifdef DEBUG
-    fprintf (stderr, "Used %d bytes instead of %d\n",
-	     (int) (allbits - origallbits), (int) rep->nbytes);
-#endif
 
     if (blockrec->type == FS_OPEN_FONT)
     {
