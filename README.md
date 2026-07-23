@@ -48,7 +48,7 @@ configure script takes various options to enable or disable them:
     are architecture specific, and contain less font information
     than pcf files.  snf fonts are deprecated and support for them
     may be removed in future libXfont releases.  
-    Disabled by default, enable via --disable-snfformat.
+    Disabled by default, enable via --enable-snfformat.
 
 - Font services:
 
