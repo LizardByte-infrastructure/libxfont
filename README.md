@@ -53,7 +53,7 @@ configure script takes various options to enable or disable them:
 - Font services:
 
   * xfs font servers - allows retrieving fonts as a client of an xfs server.
-    Enabled by default, disable via --disable-fc (font client).
+    Disabled by default, enable via --enable-fc (font client).
 
     If enabled, you can also use the standard libxtrans flags to
     configure which transports can be used to connect to xfs:

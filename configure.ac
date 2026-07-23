@@ -217,9 +217,9 @@ fi
 #
 
 AC_ARG_ENABLE(fc,
-	AS_HELP_STRING([--disable-fc],
-		[Support connections to xfs servers (default: enabled)]),
-	[XFONT_FC=$enableval],[XFONT_FC=yes])
+	AS_HELP_STRING([--enable-fc],
+		[Support connections to xfs servers (default: disabled)]),
+	[XFONT_FC=$enableval],[XFONT_FC=no])
 AM_CONDITIONAL(XFONT_FC, [test "x$XFONT_FC" = xyes])
 if test "x$XFONT_FC" = xyes; then
 	AC_DEFINE(XFONT_FC,1,[Support the X Font Services Protocol])
